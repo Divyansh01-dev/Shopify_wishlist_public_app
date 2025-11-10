@@ -1,0 +1,20 @@
+{{ 'app_embed.css' | asset_url | stylesheet_tag }}
+{{ 'app_embed.js' | asset_url | script_tag }}
+
+{% if template.name == 'product' %}
+  <div id="popup-message" class="popup-message">
+    <h1>Hello</h1>
+  </div>
+{% endif %}
+
+<script>
+  window.WishlistCustomerId = "{{ customer.id | default: '' }}";
+</script>
+
+{% schema %}
+{
+  "name": "Wishlist App Embed",
+  "target": "body",
+  "settings": []
+}
+{% endschema %}
