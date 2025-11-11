@@ -8,11 +8,11 @@
  
 
 <script>
-  // Get Shopify logged-in customer ID
+  
   let usertId = window.WishlistCustomerId = "{{ customer.id | default: '' }}";
   console.log("usertId", usertId);
 
-  // Helper function to format price
+
   function formatPrice(price) {
     if (!price) return 'Price not available';
     const priceNum = typeof price === 'string' ? parseFloat(price) : price;
@@ -22,7 +22,7 @@
     }).format(priceNum);
   }
 
-  // Helper function to fetch product data
+
   async function fetchProductData(handle, existingItem = {}) {
     try {
       const productResponse = await fetch('/products/' + handle + '.json');
@@ -47,7 +47,7 @@
   async function getData() {
     const grid = document.getElementById("wishlist-grid");
 
-    // 🟢 If user is logged in → Load wishlist from API
+ 
     if (usertId) {
       const url = `http://localhost:5000/api/wishlist/${usertId}`;
       try {
@@ -62,7 +62,7 @@
           return;
         }
 
-        // Fetch complete product data for all items
+       
         const enhancedItems = await Promise.all(
           data.map(async (item) => {
             const productData = await fetchProductData(item.productHandle, item);
@@ -78,7 +78,7 @@
       }
     }
 
-    // ⚪ If no user logged in → Load wishlist from localStorage
+ 
     else {
       console.log("Guest user — showing local wishlist");
       const wishlistKey = "guest_wishlist";
@@ -89,7 +89,7 @@
         return;
       }
 
-      // Fetch product data for guest items
+
       const enhancedGuestItems = await Promise.all(
         localData.map(async (item) => {
           const productData = await fetchProductData(item.handle, item);
@@ -101,7 +101,7 @@
     }
   }
 
-  // Single function to render wishlist items
+
   function renderWishlist(grid, items, isLoggedIn) {
     grid.innerHTML = items.map(item => `
       <div class="wishlist-item">

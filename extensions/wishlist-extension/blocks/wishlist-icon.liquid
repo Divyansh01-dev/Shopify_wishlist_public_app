@@ -1,12 +1,9 @@
-<!-- Wishlist HTML (will be injected before .header__search) -->
+
 <script>
 document.addEventListener('DOMContentLoaded', async function () {
   const searchEl = document.querySelector('.header__search');
   if (!searchEl) return;
-
   const userId = window.WishlistCustomerId = "{{ customer.id | default: '' }}";
-
-  // Inject Wishlist Icon HTML
   const wishlistHTML = `
     <div class="header-wishlist" id="header-wishlist" aria-live="polite">
       <button type="button" class="wishlist-btn" id="wishlist-btn" aria-label="Open wishlist" aria-haspopup="true">
@@ -19,12 +16,9 @@ document.addEventListener('DOMContentLoaded', async function () {
     </div>
   `;
 
-  // Insert before .header__search
   searchEl.insertAdjacentHTML('beforebegin', wishlistHTML);
-
   const countEl = document.getElementById('wishlist-count');
 
-  // Function: Update count for logged-in user (API)
   async function fetchWishlistCountFromAPI(userId) {
     try {
       const response = await fetch(`http://localhost:5000/api/wishlist/${userId}`);
@@ -38,8 +32,7 @@ document.addEventListener('DOMContentLoaded', async function () {
       countEl.textContent = "0";
     }
   }
-
-  // Function: Update count for guest user (localStorage)
+  
   function fetchWishlistCountFromLocal() {
     try {
       const stored = localStorage.getItem("guest_wishlist");
@@ -51,16 +44,16 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
   }
 
-  // 🟢 Decide source based on login state
+
   if (userId) {
     await fetchWishlistCountFromAPI(userId);
   } else {
     fetchWishlistCountFromLocal();
   }
 
-  // Click handler → navigate or open modal/drawer
+  
   document.getElementById('wishlist-btn').addEventListener('click', function () {
-    window.location.href = '/pages/wishlist'; // or your wishlist modal logic
+    window.location.href = '/pages/wishlist'; 
   });
 });
 </script>
@@ -71,7 +64,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 {% schema %}
 {
   "name": "wishlist-icon",
-  "target": "body",
+  "target": "body", 
   "settings": [
     
   ]
