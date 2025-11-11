@@ -1,10 +1,22 @@
 {{ 'app_embed.css' | asset_url | stylesheet_tag }}
-{{ 'app_embed.js' | asset_url | script_tag }}
-
+{% comment %} {{ 'app_embed.js' | asset_url | script_tag }} {% endcomment %}
+<script src="{{ 'app_embed.js' | asset_url }}" defer></script>
 {% if template.name == 'product' %}
   <div id="popup-message" class="popup-message">
     <h1>Hello</h1>
   </div>
+
+  <button
+    type="button"
+    class="ws-wishlist-btn"
+    aria-label="Add to wishlist"
+    data-product-id="{{ product.id }}"
+    data-variant-id="{{ product.selected_or_first_available_variant.id }}"
+    data-product-handle="{{ product.handle }}"
+    data-product-title="{{ product.title | escape }}"
+  >
+    Add to wishlist
+  </button>
 {% endif %}
 
 <script>
@@ -14,7 +26,8 @@
 {% schema %}
 {
   "name": "Wishlist App Embed",
-  "target": "body",
+  "target": "section",
   "settings": []
 }
 {% endschema %}
+ 

@@ -1,0 +1,209 @@
+
+<h1 class="wishlist-title">My Wishlists</h1>
+
+<div id="wishlist-grid" class="wishlist-grid">
+  <p class="wishlist-loading">Loading your wishlist...</p>
+</div>
+
+ 
+
+<script>
+  // Get Shopify logged-in customer ID
+  let usertId = window.WishlistCustomerId = "{{ customer.id | default: '' }}";
+  console.log("usertId", usertId);
+
+  // Helper function to format price
+  function formatPrice(price) {
+    if (!price) return 'Price not available';
+    const priceNum = typeof price === 'string' ? parseFloat(price) : price;
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(priceNum);
+  }
+
+  // Helper function to fetch product data
+  async function fetchProductData(handle, existingItem = {}) {
+    try {
+      const productResponse = await fetch('/products/' + handle + '.json');
+      if (productResponse.ok) {
+        const productData = await productResponse.json();
+        {% comment %} console.log("productData", productData);
+        console.log("Price:", productData.product?.variants[0]?.price); {% endcomment %}
+        
+        return {
+          productImage: productData.product?.image?.src || productData.product?.images?.[0]?.src || existingItem.productImage || existingItem.image,
+          productPrice: productData.product?.variants[0]?.price || existingItem.productPrice,
+          productTitle: productData.product?.title || existingItem.productTitle || existingItem.title,
+          productHandle: handle
+        };
+      }
+    } catch (error) {
+      console.error('Error fetching product data:', error);
+    }
+    return existingItem;
+  }
+
+  async function getData() {
+    const grid = document.getElementById("wishlist-grid");
+
+    // 🟢 If user is logged in → Load wishlist from API
+    if (usertId) {
+      const url = `http://localhost:5000/api/wishlist/${usertId}`;
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Response status: ${response.status}`);
+
+        const result = await response.json();
+        const data = result.data;
+
+        if (!data || data.length === 0) {
+          grid.innerHTML = `<p class="wishlist-empty">Your wishlist is empty.</p>`;
+          return;
+        }
+
+        // Fetch complete product data for all items
+        const enhancedItems = await Promise.all(
+          data.map(async (item) => {
+            const productData = await fetchProductData(item.productHandle, item);
+            return { ...item, ...productData };
+          })
+        );
+
+        renderWishlist(grid, enhancedItems, true);
+
+      } catch (error) {
+        console.error(error.message);
+        grid.innerHTML = `<p class="wishlist-error">Failed to load wishlist. Please try again later.</p>`;
+      }
+    }
+
+    // ⚪ If no user logged in → Load wishlist from localStorage
+    else {
+      console.log("Guest user — showing local wishlist");
+      const wishlistKey = "guest_wishlist";
+      const localData = JSON.parse(localStorage.getItem(wishlistKey)) || [];
+
+      if (localData.length === 0) {
+        grid.innerHTML = `<p class="wishlist-empty">Your wishlist is empty.</p>`;
+        return;
+      }
+
+      // Fetch product data for guest items
+      const enhancedGuestItems = await Promise.all(
+        localData.map(async (item) => {
+          const productData = await fetchProductData(item.handle, item);
+          return { ...item, ...productData };
+        })
+      );
+
+      renderWishlist(grid, enhancedGuestItems, false);
+    }
+  }
+
+  // Single function to render wishlist items
+  function renderWishlist(grid, items, isLoggedIn) {
+    grid.innerHTML = items.map(item => `
+      <div class="wishlist-item">
+        <a href="/products/${item.productHandle || item.handle}" class="wishlist-link">
+          <div class="wishlist-image">
+            <img src="${item.productImage || item.image || 'https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-collection-1_large.png?v=1530129113'}" 
+                 alt="${item.productTitle || item.title}" loading="lazy">
+          </div>
+          <div class="wishlist-info">
+            <h3 class="wishlist-title">${item.productTitle || item.title}</h3>
+            <p class="wishlist-price">
+              ${isLoggedIn ? 
+                formatPrice(item.productPrice) : 
+                (item.productPrice ? formatPrice(item.productPrice) : 'Login to view price')
+              }
+            </p>
+          </div>
+        </a>
+      </div>
+    `).join("");
+  }
+
+  document.addEventListener("DOMContentLoaded", getData);
+</script>
+
+
+<style>
+  .wishlist-title {
+    font-size: 2rem;
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .wishlist-grid {
+    display: grid;
+    {% comment %} grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); {% endcomment %}
+    grid-template-columns: repeat(auto-fill, minmax(22%, 1fr));
+    gap: 1.5rem;
+    padding: 0 1rem 3rem;
+  }
+
+  .wishlist-item {
+    border: 1px solid #eee;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fff;
+    transition: box-shadow 0.2s ease;
+  }
+
+  .wishlist-item:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+
+  .wishlist-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  } 
+
+  .wishlist-image {
+    width: 100%;
+    aspect-ratio: 1/1;
+    overflow: hidden;
+    background: #f8f8f8;
+  }
+
+  .wishlist-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .wishlist-info {
+    padding: 1rem;
+  }
+
+  .wishlist-info h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 0.3rem;
+    text-align:left;
+  }
+
+  .wishlist-info p {
+    font-size: 14px;
+    color: #666; 
+  }
+
+  .wishlist-loading,
+  .wishlist-empty,
+  .wishlist-error {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: #555;
+  }
+</style>
+
+{% schema %}
+{
+  "name": "Wishlist Page",
+  "target": "section",
+  "settings": []
+}
+{% endschema %}
+

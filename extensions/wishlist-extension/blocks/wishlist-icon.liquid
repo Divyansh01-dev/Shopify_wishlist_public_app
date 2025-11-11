@@ -1,0 +1,79 @@
+<!-- Wishlist HTML (will be injected before .header__search) -->
+<script>
+document.addEventListener('DOMContentLoaded', async function () {
+  const searchEl = document.querySelector('.header__search');
+  if (!searchEl) return;
+
+  const userId = window.WishlistCustomerId = "{{ customer.id | default: '' }}";
+
+  // Inject Wishlist Icon HTML
+  const wishlistHTML = `
+    <div class="header-wishlist" id="header-wishlist" aria-live="polite">
+      <button type="button" class="wishlist-btn" id="wishlist-btn" aria-label="Open wishlist" aria-haspopup="true">
+        <!-- Heart SVG -->
+        <svg class="wishlist-icon" viewBox="0 0 24 24" width="22" height="22" role="img" aria-hidden="true" focusable="false">
+          <path d="M12 21s-7.5-4.8-10-8.2C-0.3 8.2 3.3 3 8 3c2.3 0 3.9 1.2 4 1.3.1-.1 1.7-1.3 4-1.3 4.7 0 8.3 5.2 6 9.8C19.5 16.2 12 21 12 21z" fill="currentColor"/>
+        </svg>
+        <span class="wishlist-count" id="wishlist-count" aria-hidden="true">0</span>
+      </button>
+    </div>
+  `;
+
+  // Insert before .header__search
+  searchEl.insertAdjacentHTML('beforebegin', wishlistHTML);
+
+  const countEl = document.getElementById('wishlist-count');
+
+  // Function: Update count for logged-in user (API)
+  async function fetchWishlistCountFromAPI(userId) {
+    try {
+      const response = await fetch(`http://localhost:5000/api/wishlist/${userId}`);
+      if (!response.ok) throw new Error("Failed to fetch wishlist data");
+
+      const result = await response.json();
+      const count = result?.data?.length || 0;
+      countEl.textContent = count;
+    } catch (err) {
+      console.error("Wishlist API error:", err);
+      countEl.textContent = "0";
+    }
+  }
+
+  // Function: Update count for guest user (localStorage)
+  function fetchWishlistCountFromLocal() {
+    try {
+      const stored = localStorage.getItem("guest_wishlist");
+      const items = stored ? JSON.parse(stored) : [];
+      countEl.textContent = items.length || 0;
+    } catch (e) {
+      console.error("Local wishlist error:", e);
+      countEl.textContent = "0";
+    }
+  }
+
+  // 🟢 Decide source based on login state
+  if (userId) {
+    await fetchWishlistCountFromAPI(userId);
+  } else {
+    fetchWishlistCountFromLocal();
+  }
+
+  // Click handler → navigate or open modal/drawer
+  document.getElementById('wishlist-btn').addEventListener('click', function () {
+    window.location.href = '/pages/wishlist'; // or your wishlist modal logic
+  });
+});
+</script>
+
+
+
+
+{% schema %}
+{
+  "name": "wishlist-icon",
+  "target": "body",
+  "settings": [
+    
+  ]
+}
+{% endschema %}
